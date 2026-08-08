@@ -28,13 +28,19 @@ git config --global --add safe.directory /opt/flutter   # required when running 
 export PATH="/opt/flutter/bin:$PATH"
 
 apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
-                   libmpv-dev libepoxy-dev mpv
+                   build-essential libmpv-dev libepoxy-dev mpv
 ```
 
-`media_kit_video`'s CMake links `PkgConfig::mpv` and `PkgConfig::epoxy`, so both
-`.pc` files have to exist or the Linux build fails inside CMake. `libgtk-3-dev`
-usually drags `libepoxy-dev` in; both are named explicitly because "usually" is
-not a build dependency.
+Three of those are needed by `media_kit` rather than by Flutter, and a bare
+container has none of them:
+
+- `libmpv-dev` and `libepoxy-dev` — `media_kit_video`'s CMake links
+  `PkgConfig::mpv` and `PkgConfig::epoxy`, so both `.pc` files must exist.
+- `build-essential` — `media_kit_libs_linux` builds mimalloc by shelling out to
+  `cmake` with the default generator and then to **`make`**. Flutter's own build
+  uses clang and ninja and never needs either, so this omission fails only once
+  media_kit is in the graph, and fails inside a nested build a long way from the
+  Flutter output.
 
 Pin **3.44.8** — it is what CI uses.
 

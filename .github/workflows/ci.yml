@@ -103,6 +103,7 @@ jobs:
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
             ca-certificates curl git jq unzip xz-utils zip \
             clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
+            build-essential \
             dpkg-dev apt-utils file desktop-file-utils lintian \
             librsvg2-bin libmpv-dev libepoxy-dev mpv \
             xvfb x11-utils imagemagick ffmpeg
@@ -168,6 +169,18 @@ jobs:
               tail -150 /tmp/build.log
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
+
+            # Annotations too. They are the one failure channel that survives to
+            # an unauthenticated reader — the job summary renders client-side on
+            # the run page and the logs need a session, so without this a broken
+            # build says only "exit code 1" to anyone not signed in.
+            ERRORS="$(grep -E 'CMake Error|No package|FATAL|error:|not found' \
+              /tmp/build.log | head -8 || true)"
+            [ -n "$ERRORS" ] || ERRORS="$(tail -8 /tmp/build.log)"
+            printf '%s\n' "$ERRORS" | while IFS= read -r line; do
+              printf '::error::%s\n' "$line"
+            done
+
             exit 1
           fi
 
