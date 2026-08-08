@@ -21,5 +21,8 @@
   "statusResolution": "{width}×{height}",
   "statusFrameRate": "{fps} fps",
 
+  "errorEngineUnavailable": "Videowiedergabe nicht verfügbar",
+  "errorEngineUnavailableHint": "Kino gibt Videos über libmpv wieder, das nicht geladen werden konnte. Installieren Sie es — das Paket heisst meist libmpv2 — und starten Sie Kino erneut.",
+
   "errorCouldNotOpen": "{file} konnte nicht geöffnet werden"
 }

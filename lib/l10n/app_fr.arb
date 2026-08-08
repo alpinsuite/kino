@@ -21,5 +21,8 @@
   "statusResolution": "{width}×{height}",
   "statusFrameRate": "{fps} fps",
 
+  "errorEngineUnavailable": "Lecture vidéo indisponible",
+  "errorEngineUnavailableHint": "Kino lit les vidéos via libmpv, qui n'a pas pu être chargé. Installez-le — le paquet s'appelle généralement libmpv2 — puis relancez Kino.",
+
   "errorCouldNotOpen": "Impossible d'ouvrir {file}"
 }

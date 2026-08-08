@@ -25,8 +25,22 @@ class MediaKitPlaybackController extends ChangeNotifier
     _listen();
   }
 
-  /// Must run before the first controller is built, and before `runApp`.
-  static void ensureInitialized() => MediaKit.ensureInitialized();
+  /// Loads libmpv and registers the texture bridge. Must run before the first
+  /// controller is built, and before `runApp`.
+  ///
+  /// Returns the reason it failed, or null on success — it does **not** throw.
+  /// libmpv is resolved at runtime and may simply be absent, and letting that
+  /// escape `main` kills the process before `runApp` with no window and no
+  /// message. The caller falls back to [UnavailablePlaybackController] so the
+  /// interface can open and say what is wrong.
+  static Object? ensureInitialized() {
+    try {
+      MediaKit.ensureInitialized();
+      return null;
+    } on Object catch (error) {
+      return error;
+    }
+  }
 
   late final Player _player;
   late final VideoController _video;

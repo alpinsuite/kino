@@ -64,6 +64,15 @@
     "placeholders": { "fps": { "type": "String", "example": "29.97" } }
   },
 
+  "errorEngineUnavailable": "Video playback is unavailable",
+  "@errorEngineUnavailable": {
+    "description": "Headline on the empty state when libmpv could not be loaded."
+  },
+  "errorEngineUnavailableHint": "Kino plays video through libmpv, which could not be loaded. Install it — the package is usually called libmpv2 — and start Kino again.",
+  "@errorEngineUnavailableHint": {
+    "description": "Explanation under errorEngineUnavailable, naming the package to install."
+  },
+
   "errorCouldNotOpen": "Could not open {file}",
   "@errorCouldNotOpen": {
     "description": "Shown when the engine refuses a file.",

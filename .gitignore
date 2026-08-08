@@ -46,3 +46,11 @@ app.*.map.json
 /build/deb/
 /build/AppDir/
 /build/icons/
+
+# A Windows runner is scaffolded locally so the interface can be looked at
+# without a VM, and because building for a second platform catches things the
+# Linux build hides — the missing-libmpv window bug was found that way. It is
+# not a target: no MPRIS, no VA-API, no XDG, packaging ignores it and CI never
+# builds it. Regenerate with `flutter create --platforms=windows .`, then
+# `git checkout -- .metadata`, which deliberately lists linux alone.
+windows/

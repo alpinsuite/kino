@@ -12,6 +12,7 @@ class EmptyState extends StatelessWidget {
   const EmptyState({
     required this.onOpen,
     this.recent = const <Uri>[],
+    this.engineFailure,
     super.key,
   });
 
@@ -21,10 +22,51 @@ class EmptyState extends StatelessWidget {
   /// there is not going to be one (spec §5).
   final List<Uri> recent;
 
+  /// Why libmpv could not be loaded, or null. When set, this panel becomes the
+  /// explanation: opening a file would achieve nothing, so the action goes away
+  /// rather than sitting there failing silently.
+  final Object? engineFailure;
+
   @override
   Widget build(BuildContext context) {
     final theme = context.slate;
     final strings = AppLocalizations.of(context);
+
+    if (engineFailure != null) {
+      return ColoredBox(
+        color: theme.palette.background,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Text(
+                  strings.errorEngineUnavailable,
+                  textAlign: TextAlign.center,
+                  style: theme.titleStyle.copyWith(color: theme.palette.danger),
+                ),
+                SizedBox(height: theme.metrics.gap),
+                Text(
+                  strings.errorEngineUnavailableHint,
+                  textAlign: TextAlign.center,
+                  style: theme.textStyle,
+                ),
+                SizedBox(height: theme.metrics.gap * 2),
+                // The engine's own words. Not translated on purpose: it is the
+                // string a user will paste into a search or a bug report.
+                Text(
+                  '$engineFailure',
+                  textAlign: TextAlign.center,
+                  style: theme.dimTextStyle,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return ColoredBox(
       color: theme.palette.background,

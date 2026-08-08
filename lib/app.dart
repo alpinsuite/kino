@@ -10,11 +10,19 @@ import 'l10n/generated/app_localizations.dart';
 import 'ui/app_shell.dart';
 
 class KinoApp extends StatefulWidget {
-  const KinoApp({this.initialPlaylist = const <Uri>[], super.key});
+  const KinoApp({
+    this.initialPlaylist = const <Uri>[],
+    this.engineFailure,
+    super.key,
+  });
 
   /// Files and URLs handed over on the command line, by the file manager, or by
   /// the desktop entry's `%U`.
   final List<Uri> initialPlaylist;
+
+  /// Why libmpv could not be loaded, or null when it did. Non-null means the
+  /// window opens on an explanation rather than a player.
+  final Object? engineFailure;
 
   @override
   State<KinoApp> createState() => _KinoAppState();
@@ -22,7 +30,11 @@ class KinoApp extends StatefulWidget {
 
 class _KinoAppState extends State<KinoApp> {
   final ThemeController _theme = ThemeController();
-  late final PlaybackController _playback = MediaKitPlaybackController();
+  late final PlaybackController _playback = widget.engineFailure == null
+      ? MediaKitPlaybackController()
+      // Constructing the real controller would throw for the same reason
+      // initialisation did, so it is not attempted.
+      : UnavailablePlaybackController(widget.engineFailure!);
 
   @override
   void dispose() {

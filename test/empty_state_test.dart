@@ -75,6 +75,65 @@ void main() {
     }
   });
 
+  group('when the engine could not be loaded', () {
+    testWidgets('explains instead of offering a file dialog', (tester) async {
+      await tester.pumpWidget(
+        _harness(
+          EmptyState(
+            onOpen: () {},
+            recent: <Uri>[Uri.file('/srv/footage/clip.mkv')],
+            engineFailure: 'Cannot find libmpv-2.dll in your system %PATH%.',
+          ),
+        ),
+      );
+
+      expect(find.text('Video playback is unavailable'), findsOneWidget);
+      // Opening a file would achieve nothing, so the action is not offered.
+      expect(find.text('Open a file'), findsNothing);
+      expect(find.text('clip.mkv'), findsNothing);
+    });
+
+    testWidgets('shows the engine\'s own words, untranslated', (tester) async {
+      // The searchable string is the whole value of the panel to someone
+      // filing a bug; a translated paraphrase is not.
+      const reason = 'Cannot find libmpv-2.dll in your system %PATH%.';
+      await tester.pumpWidget(
+        _harness(
+          EmptyState(onOpen: () {}, engineFailure: reason),
+          locale: const Locale('de'),
+        ),
+      );
+
+      expect(find.text('Videowiedergabe nicht verfügbar'), findsOneWidget);
+      expect(find.text(reason), findsOneWidget);
+    });
+
+    testWidgets('fits all four locales at the minimum window size', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(600, 380));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      for (final locale in AppLocalizations.supportedLocales) {
+        await tester.pumpWidget(
+          _harness(
+            EmptyState(
+              onOpen: () {},
+              engineFailure: 'Cannot find libmpv-2.dll in your system %PATH%.',
+            ),
+            locale: locale,
+          ),
+        );
+        await tester.pump();
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'the failure panel overflowed in ${locale.languageCode}',
+        );
+      }
+    });
+  });
+
   test('all four locales are actually built', () {
     expect(
       AppLocalizations.supportedLocales.map((l) => l.languageCode).toSet(),

@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/widgets.dart';
+import 'package:kino_core/kino_core.dart';
 import 'package:kino_media/kino_media.dart';
 import 'package:provider/provider.dart';
 import 'package:slate_ui/slate_ui.dart';
@@ -114,7 +115,15 @@ class _AppShellState extends State<AppShell> {
                           // The letterbox is a themed surface like any other.
                           fill: palette.background,
                         )
-                      : EmptyState(onOpen: _pickFile, recent: _recent),
+                      : EmptyState(
+                          onOpen: _pickFile,
+                          recent: _recent,
+                          engineFailure:
+                              state.status == PlaybackStatus.failed &&
+                                  !state.hasMedia
+                              ? state.error
+                              : null,
+                        ),
                 ),
                 TransportBar(
                   state: state,

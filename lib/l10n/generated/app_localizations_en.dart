@@ -60,6 +60,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get errorEngineUnavailable => 'Video playback is unavailable';
+
+  @override
+  String get errorEngineUnavailableHint =>
+      'Kino plays video through libmpv, which could not be loaded. Install it — the package is usually called libmpv2 — and start Kino again.';
+
+  @override
   String errorCouldNotOpen(String file) {
     return 'Could not open $file';
   }

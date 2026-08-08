@@ -192,6 +192,18 @@ abstract class AppLocalizations {
   /// **'{fps} fps'**
   String statusFrameRate(String fps);
 
+  /// Headline on the empty state when libmpv could not be loaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Video playback is unavailable'**
+  String get errorEngineUnavailable;
+
+  /// Explanation under errorEngineUnavailable, naming the package to install.
+  ///
+  /// In en, this message translates to:
+  /// **'Kino plays video through libmpv, which could not be loaded. Install it — the package is usually called libmpv2 — and start Kino again.'**
+  String get errorEngineUnavailableHint;
+
   /// Shown when the engine refuses a file.
   ///
   /// In en, this message translates to:

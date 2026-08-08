@@ -9,3 +9,4 @@ library;
 export 'src/media_kit_playback_controller.dart';
 export 'src/playback_controller.dart';
 export 'src/playback_surface.dart';
+export 'src/unavailable_playback_controller.dart';

@@ -11,7 +11,13 @@ Future<void> main(List<String> arguments) async {
 
   // Loads libmpv and registers the texture bridge. Must happen before any
   // controller is built and before the first frame.
-  MediaKitPlaybackController.ensureInitialized();
+  //
+  // Deliberately not fatal. libmpv is resolved at runtime, so a correctly built
+  // Kino can meet a machine that does not have it — the portable tarball cannot
+  // declare the dependency the way the .deb does. Letting the failure escape
+  // here kills the process before runApp: no window, no message, nothing for
+  // the user to search for. The interface opens and explains instead.
+  final engineFailure = MediaKitPlaybackController.ensureInitialized();
 
   await windowManager.ensureInitialized();
   await windowManager.waitUntilReadyToShow(
@@ -26,7 +32,12 @@ Future<void> main(List<String> arguments) async {
     windowManager.show,
   );
 
-  runApp(KinoApp(initialPlaylist: parseArguments(arguments)));
+  runApp(
+    KinoApp(
+      initialPlaylist: parseArguments(arguments),
+      engineFailure: engineFailure,
+    ),
+  );
 }
 
 /// Turns `%U` from the desktop entry, and anything typed on a shell, into a
