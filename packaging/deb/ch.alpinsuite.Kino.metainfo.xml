@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AppStream metadata. Worth keeping without a Flatpak build: GNOME Software and
+  KDE Discover both read this out of /usr/share/metainfo, and the <mediatype>
+  entries are what make Kino offerable as a handler for a video file.
+-->
+<component type="desktop-application">
+  <id>ch.alpinsuite.Kino</id>
+  <launchable type="desktop-id">ch.alpinsuite.Kino.desktop</launchable>
+
+  <name>Kino</name>
+  <summary>Play and review video</summary>
+  <summary xml:lang="de">Video abspielen und begutachten</summary>
+  <summary xml:lang="fr">Lire et annoter des vidéos</summary>
+  <summary xml:lang="it">Riproduci e annota video</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>AGPL-3.0-or-later</project_license>
+
+  <description>
+    <p>
+      Kino is a video player for the Linux desktop. It opens a file, plays it
+      correctly, and stays out of the way. Playback is libmpv, so every format
+      FFmpeg understands works, hardware decoding is on by default with a clean
+      fall back to software, and subtitles render through libass.
+    </p>
+    <p>
+      It also does something no other Linux player does well: review. Frame-exact
+      stepping and seeking, SMPTE timecode, in and out marks, and timestamped
+      notes that attach to a frame rather than to an approximate second — then
+      exported as CSV, Markdown or PDF for someone else to act on.
+    </p>
+    <p>No accounts, no telemetry, no media library, and no network access.</p>
+  </description>
+
+  <categories>
+    <category>AudioVideo</category>
+    <category>Video</category>
+    <category>Player</category>
+  </categories>
+
+  <keywords>
+    <keyword>video</keyword>
+    <keyword>player</keyword>
+    <keyword>mpv</keyword>
+    <keyword>subtitles</keyword>
+    <keyword>review</keyword>
+    <keyword>annotate</keyword>
+  </keywords>
+
+  <provides>
+    <binary>kino</binary>
+    <mediatype>video/mp4</mediatype>
+    <mediatype>video/x-matroska</mediatype>
+    <mediatype>video/webm</mediatype>
+    <mediatype>video/quicktime</mediatype>
+    <mediatype>video/x-msvideo</mediatype>
+    <mediatype>video/mpeg</mediatype>
+    <mediatype>video/x-ms-wmv</mediatype>
+    <mediatype>video/x-flv</mediatype>
+    <mediatype>video/ogg</mediatype>
+    <mediatype>video/3gpp</mediatype>
+    <mediatype>video/x-m4v</mediatype>
+    <mediatype>video/mp2t</mediatype>
+    <mediatype>application/vnd.apple.mpegurl</mediatype>
+  </provides>
+
+  <url type="homepage">https://github.com/AlpinSuite/kino</url>
+  <url type="bugtracker">https://github.com/AlpinSuite/kino/issues</url>
+
+  <content_rating type="oars-1.1" />
+
+  <releases>
+  </releases>
+</component>

@@ -1,0 +1,28 @@
+[Desktop Entry]
+Type=Application
+# Desktop Entry Specification version this file conforms to — not the
+# application's version. 1.1 is the newest that desktop-file-validate on
+# Ubuntu 22.04 recognises, and it covers every key used below; declaring a
+# later spec makes the validator reject the file outright.
+Version=1.1
+Name=Kino
+GenericName=Video Player
+Comment=Play and review video
+Comment[de]=Video abspielen und begutachten
+Comment[fr]=Lire et annoter des vidéos
+Comment[it]=Riproduci e annota video
+GenericName[de]=Videoplayer
+GenericName[fr]=Lecteur vidéo
+GenericName[it]=Lettore video
+# %U rather than %u: several files opened together become a playlist (§0.5).
+Exec=kino %U
+TryExec=kino
+Icon=ch.alpinsuite.Kino
+Terminal=false
+StartupNotify=true
+# The runner calls g_set_prgname(APPLICATION_ID), so WM_CLASS is the
+# application id and not the binary name.
+StartupWMClass=ch.alpinsuite.Kino
+Categories=AudioVideo;Video;Player;
+Keywords=video;movie;film;player;mpv;subtitles;playback;review;annotate;
+MimeType=video/mp4;video/x-matroska;video/webm;video/quicktime;video/x-msvideo;video/mpeg;video/x-ms-wmv;video/x-flv;video/ogg;video/x-ogm+ogg;video/3gpp;video/3gpp2;video/x-m4v;video/mp2t;video/vnd.mpeg.dash.mpd;application/x-matroska;application/vnd.apple.mpegurl;application/x-mpegURL;audio/mpeg;audio/flac;audio/x-vorbis+ogg;audio/x-wav;audio/mp4;audio/x-opus+ogg;

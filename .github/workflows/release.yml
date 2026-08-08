@@ -1,0 +1,185 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)publish, e.g. v0.1.0"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: "3.44.8"
+
+jobs:
+  build:
+    name: Build release packages
+    runs-on: ubuntu-latest
+    # Same glibc 2.35 baseline as CI, so a released binary runs on Ubuntu
+    # 22.04+ and Debian 12+ rather than only on the runner's own release.
+    container: ubuntu:22.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Install toolchain
+        # jq is needed by subosito/flutter-action's setup script and is not in
+        # the base image; without it the action fails before Flutter is fetched.
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            ca-certificates curl git jq unzip xz-utils zip file \
+            clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
+            dpkg-dev apt-utils desktop-file-utils librsvg2-bin \
+            libmpv-dev mpv
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Trust the container's git directories
+        run: git config --global --add safe.directory '*'
+
+      - name: Read the version and check it matches the tag
+        id: version
+        run: |
+          VERSION="$(bash tools/set_version.sh)"
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ "v$VERSION" != "$TAG" ]; then
+            echo "::error::tag $TAG does not match pubspec version $VERSION."
+            echo "::error::Run tools/set_version.sh ${TAG#v} and commit before tagging."
+            exit 1
+          fi
+          echo "releasing $VERSION"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter test
+      - run: bash tools/check_layer_purity.sh
+      - run: flutter build linux --release
+
+      - name: Audit the licences of everything linked
+        # A release is the artefact the obligation attaches to, so the audit is
+        # a gate here and not only on CI.
+        run: bash tools/audit_licenses.sh
+
+      - name: Package
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          bash packaging/build_deb.sh
+          tar -czf "build/dist/kino-${VERSION}-linux-x64.tar.gz" \
+            -C build/linux/x64/release/bundle .
+
+      - name: Build the AppImage
+        # Not fatal: a broken appimagetool download must not hold back the .deb,
+        # which is the primary artifact.
+        continue-on-error: true
+        run: bash packaging/build_appimage.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-packages
+          path: build/dist/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish the release and the APT repository
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-packages
+          path: dist
+
+      - name: Extract this version's changelog section
+        id: notes
+        run: |
+          VERSION="${{ needs.build.outputs.version }}"
+          # Everything between this version's heading and the next one.
+          awk -v version="$VERSION" '
+            $0 ~ "^## \\[" version "\\]" { collecting = 1; next }
+            collecting && /^## \[/ { exit }
+            collecting { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "No changelog entry for $VERSION." > release-notes.md
+          fi
+          {
+            echo ""
+            echo "## Install"
+            echo ""
+            echo '```bash'
+            echo "sudo install -d -m 0755 /etc/apt/keyrings"
+            echo "curl -fsSL https://alpinsuite.github.io/kino/kino-archive-keyring.gpg \\"
+            echo "  | sudo tee /etc/apt/keyrings/kino.gpg > /dev/null"
+            echo "sudo curl -fsSL -o /etc/apt/sources.list.d/kino.sources \\"
+            echo "  https://alpinsuite.github.io/kino/kino.sources"
+            echo "sudo apt update && sudo apt install kino"
+            echo '```'
+            echo ""
+            echo "Or download the \`.deb\` below and run \`sudo apt install ./kino_${VERSION}_amd64.deb\`."
+            echo ""
+            echo "The AppImage bundles libmpv and FFmpeg; their licences and a written"
+            echo "offer for the corresponding source are inside it, under"
+            echo "\`usr/share/licenses\`."
+          } >> release-notes.md
+          cat release-notes.md
+
+      - name: Create the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: Kino ${{ needs.build.outputs.version }}
+          body_path: release-notes.md
+          files: dist/*
+          draft: false
+          prerelease: ${{ contains(needs.build.outputs.version, '-') }}
+
+      - name: Install apt-utils
+        run: sudo apt-get update && sudo apt-get install -y apt-utils
+
+      - name: Check out the published site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # gh-pages may not exist yet on the first release.
+          if git ls-remote --exit-code --heads origin gh-pages > /dev/null 2>&1; then
+            git fetch origin gh-pages
+            git worktree add pages origin/gh-pages
+          else
+            git worktree add --detach pages
+            cd pages
+            git checkout --orphan gh-pages
+            git rm -rf . > /dev/null 2>&1 || true
+          fi
+
+      - name: Regenerate the APT repository
+        env:
+          APT_GPG_PRIVATE_KEY: ${{ secrets.APT_GPG_PRIVATE_KEY }}
+          APT_GPG_PASSPHRASE: ${{ secrets.APT_GPG_PASSPHRASE }}
+        run: bash packaging/publish_apt.sh "$PWD/pages" dist/*.deb
+
+      - name: Publish the site
+        run: |
+          cd pages
+          git add -A
+          if git diff --cached --quiet; then
+            echo "nothing changed"
+            exit 0
+          fi
+          git commit -m "Publish kino ${{ needs.build.outputs.version }}"
+          git push origin HEAD:gh-pages

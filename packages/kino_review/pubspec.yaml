@@ -1,0 +1,19 @@
+name: kino_review
+description: >-
+  Review mode: frame-exact timecode arithmetic, in/out marks, timestamped
+  annotations and the sidecar format. Pure Dart — no Flutter, no I/O, no UI.
+publish_to: none
+version: 0.1.0
+
+resolution: workspace
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  collection: ^1.19.0
+  meta: ^1.16.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.15

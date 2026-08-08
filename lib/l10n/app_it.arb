@@ -1,0 +1,25 @@
+{
+  "@@locale": "it",
+
+  "appTitle": "Kino",
+
+  "emptyStateOpen": "Apri un file",
+  "emptyStateDropHint": "oppure trascinane uno sulla finestra",
+  "emptyStateRecent": "Recenti",
+  "emptyStateNoRecent": "Ancora nulla riprodotto",
+
+  "openDialogTitle": "Apri video",
+  "openDialogVideoFiles": "File video",
+
+  "transportPlay": "Riproduci",
+  "transportPause": "Pausa",
+  "transportMute": "Disattiva audio",
+  "transportUnmute": "Attiva audio",
+
+  "statusHardwareDecode": "Hardware · {decoder}",
+  "statusSoftwareDecode": "Software",
+  "statusResolution": "{width}×{height}",
+  "statusFrameRate": "{fps} fps",
+
+  "errorCouldNotOpen": "Impossibile aprire {file}"
+}

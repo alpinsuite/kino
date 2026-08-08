@@ -1,0 +1,62 @@
+name: kino
+description: "A fast, native video player for the Linux desktop."
+publish_to: "none"
+
+# Single source of truth for the application version. `tools/set_version.sh`
+# propagates it to the AppStream metainfo and `lib/core/app_version.dart`; the
+# Debian control file reads it from here at build time. See docs/RELEASING.md.
+version: 0.1.0+1
+
+# This package is both the application and the root of the pub workspace, so one
+# `flutter pub get` resolves every package in the repository against a single
+# lockfile. Without it the three libraries and the application drift onto
+# different versions of `intl` and only the CI Linux build finds out.
+workspace:
+  - packages/kino_core
+  - packages/kino_media
+  - packages/kino_review
+
+environment:
+  sdk: ^3.12.2
+  flutter: ">=3.44.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  kino_core: ^0.1.0
+  kino_media: ^0.1.0
+  kino_review: ^0.1.0
+
+  # The widget kit. Pinned to a tag, never a branch: a branch means the build
+  # that ships is not the build that was tested. See docs/DECISIONS.md.
+  slate_ui:
+    git:
+      url: https://github.com/alpinsuite/ui-kit.git
+      ref: v0.1.0
+
+  # Native GTK open dialogs (§0.5). There is no Flatpak build, so the portal is
+  # optional; the GTK backend routes through one anyway when it is running.
+  file_selector: ^1.1.0
+  file_selector_linux: ^0.9.3
+  # Drag-and-drop onto the window enqueues.
+  desktop_drop: ^0.7.1
+  # Window title, minimum size, fullscreen and close interception.
+  window_manager: ^0.5.2
+  # State wiring (ChangeNotifier).
+  provider: ^6.1.5
+
+  collection: ^1.19.0
+  intl: any
+  path: ^1.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true

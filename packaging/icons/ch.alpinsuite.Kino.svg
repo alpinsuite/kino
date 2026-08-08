@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The application mark: a frame of film with a play triangle cut out of it.
+
+  Flat, hairline-ruled and drawn in the Slate accent, so it sits beside the
+  other AlpinSuite icons rather than beside a stock media-player glyph. This is
+  an asset rather than interface, which is why the colours are literals here and
+  nowhere else in the project.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="52" fill="#1C1F24"/>
+  <rect x="20.5" y="20.5" width="215" height="215" rx="37.5" fill="none"
+        stroke="#2E343C" stroke-width="3"/>
+
+  <!-- Sprocket holes, one column each side, as on a strip of 35 mm. -->
+  <g fill="#2E343C">
+    <rect x="46" y="66" width="20" height="22" rx="5"/>
+    <rect x="46" y="106" width="20" height="22" rx="5"/>
+    <rect x="46" y="146" width="20" height="22" rx="5"/>
+    <rect x="190" y="66" width="20" height="22" rx="5"/>
+    <rect x="190" y="106" width="20" height="22" rx="5"/>
+    <rect x="190" y="146" width="20" height="22" rx="5"/>
+  </g>
+
+  <!-- The play triangle, off-centre to the right of optical centre so it reads
+       as centred, which is the usual correction for a pointing shape. -->
+  <path d="M104 84 L172 128 L104 172 Z" fill="#E0A33E" stroke="#E0A33E"
+        stroke-width="12" stroke-linejoin="round"/>
+
+  <rect x="46" y="196" width="164" height="4" rx="2" fill="#2E343C"/>
+</svg>

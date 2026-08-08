@@ -1,0 +1,48 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code
+.vscode/
+
+# Flutter / Dart / pub
+**/doc/api/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+coverage/
+
+# Local development against a sibling ui-kit checkout. CI resolves slate_ui
+# from the pinned git tag, which is what proves the dependency the release
+# actually ships is the one that builds.
+pubspec_overrides.yaml
+
+# Generated localizations are committed on purpose: CI checks that they are not
+# stale, which only works if the checked-in copy is the reference.
+
+# Symbolication and obfuscation
+app.*.symbols
+app.*.map.json
+
+# Packaging output
+/build/dist/
+/build/deb/
+/build/AppDir/
+/build/icons/

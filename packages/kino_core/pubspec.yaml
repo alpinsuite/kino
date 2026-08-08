@@ -1,0 +1,29 @@
+name: kino_core
+description: >-
+  Playback state, media descriptions, settings and the XDG paths the
+  application is built on. Depends on flutter/foundation for change
+  notification, and on nothing in the widget layer.
+publish_to: none
+version: 0.1.0
+
+resolution: workspace
+
+environment:
+  sdk: ^3.12.2
+  flutter: ">=3.44.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  kino_review: ^0.1.0
+
+  collection: ^1.19.0
+  crypto: ^3.0.6
+  meta: ^1.16.0
+  path: ^1.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

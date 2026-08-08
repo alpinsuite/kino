@@ -1,0 +1,72 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Kino",
+  "@appTitle": {
+    "description": "The application name. Not translated — it is a proper noun."
+  },
+
+  "emptyStateOpen": "Open a file",
+  "@emptyStateOpen": {
+    "description": "Primary action on the empty state panel."
+  },
+  "emptyStateDropHint": "or drop one onto the window",
+  "@emptyStateDropHint": {
+    "description": "Secondary hint under the open button on the empty state."
+  },
+  "emptyStateRecent": "Recent",
+  "@emptyStateRecent": {
+    "description": "Heading above the recent files list on the empty state."
+  },
+  "emptyStateNoRecent": "Nothing played yet",
+  "@emptyStateNoRecent": {
+    "description": "Shown in place of the recent files list when it is empty."
+  },
+
+  "openDialogTitle": "Open video",
+  "@openDialogTitle": {
+    "description": "Title of the native file chooser."
+  },
+  "openDialogVideoFiles": "Video files",
+  "@openDialogVideoFiles": {
+    "description": "Label of the video file type filter in the file chooser."
+  },
+
+  "transportPlay": "Play",
+  "transportPause": "Pause",
+  "transportMute": "Mute",
+  "transportUnmute": "Unmute",
+  "@transportPlay": { "description": "Accessible label of the play button." },
+  "@transportPause": { "description": "Accessible label of the pause button." },
+  "@transportMute": { "description": "Accessible label of the mute button." },
+  "@transportUnmute": { "description": "Accessible label of the unmute button." },
+
+  "statusHardwareDecode": "Hardware · {decoder}",
+  "@statusHardwareDecode": {
+    "description": "Status bar indicator naming the active hardware decoder.",
+    "placeholders": { "decoder": { "type": "String", "example": "vaapi" } }
+  },
+  "statusSoftwareDecode": "Software",
+  "@statusSoftwareDecode": {
+    "description": "Status bar indicator when decoding falls back to the CPU."
+  },
+  "statusResolution": "{width}×{height}",
+  "@statusResolution": {
+    "description": "Status bar resolution readout.",
+    "placeholders": {
+      "width": { "type": "int", "example": "3840" },
+      "height": { "type": "int", "example": "2160" }
+    }
+  },
+  "statusFrameRate": "{fps} fps",
+  "@statusFrameRate": {
+    "description": "Status bar frame rate readout.",
+    "placeholders": { "fps": { "type": "String", "example": "29.97" } }
+  },
+
+  "errorCouldNotOpen": "Could not open {file}",
+  "@errorCouldNotOpen": {
+    "description": "Shown when the engine refuses a file.",
+    "placeholders": { "file": { "type": "String", "example": "clip.mkv" } }
+  }
+}

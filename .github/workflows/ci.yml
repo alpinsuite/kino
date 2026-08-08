@@ -1,0 +1,263 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+# A new push to the same branch makes the in-flight run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: "3.44.8"
+
+jobs:
+  analyze:
+    name: Analyze and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install Linux desktop build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
+            libmpv-dev mpv
+
+      - run: flutter pub get
+
+      - name: Check formatting
+        run: dart format --set-exit-if-changed .
+
+      - name: Analyze
+        run: flutter analyze --fatal-infos
+
+      - name: Check the generated localizations are up to date
+        # Regenerating must be a no-op; a stale generated file means someone
+        # edited the ARB without running gen-l10n.
+        run: |
+          flutter gen-l10n
+          if ! git diff --quiet -- lib/l10n/generated; then
+            echo "::error::lib/l10n/generated is stale — run 'flutter gen-l10n'"
+            git --no-pager diff -- lib/l10n/generated
+            exit 1
+          fi
+
+      - name: Check for hardcoded user-facing strings
+        # Every string the user can read has to come from AppLocalizations, or
+        # translating the app later means auditing the whole UI by hand.
+        run: bash tools/check_hardcoded_strings.sh
+
+      - name: Check the layers still point the right way
+        # kino_review must stay free of Flutter and media_kit must stay inside
+        # kino_media. Both are load-bearing; see the script's own comments.
+        run: bash tools/check_layer_purity.sh
+
+      - name: Test the application
+        run: flutter test --coverage
+
+      - name: Test the packages
+        # The workspace shares one lockfile, but `flutter test` only runs the
+        # package it is invoked in.
+        run: |
+          for package in kino_core kino_media kino_review; do
+            echo "::group::$package"
+            (cd "packages/$package" && flutter test)
+            echo "::endgroup::"
+          done
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          if-no-files-found: ignore
+
+  build:
+    name: Build and package
+    runs-on: ubuntu-latest
+    # Release binaries are built against glibc 2.35 so they run on Ubuntu
+    # 22.04+ and Debian 12+. Building on the runner's own 24.04 would hard-
+    # require glibc 2.39 and exclude every one of those.
+    #
+    # This does *not* pin the libmpv SONAME: media_kit dlopen()s libmpv rather
+    # than linking it, so the same binary finds libmpv.so.1 here and
+    # libmpv.so.2 on a newer distribution.
+    container: ubuntu:22.04
+    steps:
+      - name: Install toolchain
+        # jq is needed by subosito/flutter-action's setup script and is not in
+        # the base image; without it the action fails before Flutter is fetched.
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            ca-certificates curl git jq unzip xz-utils zip \
+            clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
+            dpkg-dev apt-utils file desktop-file-utils lintian \
+            librsvg2-bin libmpv-dev mpv \
+            xvfb x11-utils imagemagick ffmpeg
+
+      - uses: actions/checkout@v4
+
+      - name: Trust the container's git directories
+        # The job runs as root while the checkout and the Flutter SDK are owned
+        # by other uids, and git refuses to touch either without this. The
+        # wildcard covers the SDK, which flutter-action installs later, and the
+        # pub cache; the container is ephemeral, so its scope costs nothing.
+        run: git config --global --add safe.directory '*'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Build release bundle
+        run: flutter build linux --release
+
+      - name: Audit the licences of everything linked
+        # A distribution quietly swapping in a differently-licensed build of the
+        # media stack is the kind of change nobody notices until someone asks.
+        run: bash tools/audit_licenses.sh
+
+      - name: Smoke-test playback
+        # Video pipelines break silently on a dependency bump — a working build
+        # that renders nothing looks exactly like a working build. A generated
+        # clip, a headless display, and a screenshot that is not one flat colour
+        # is the cheapest evidence that frames reached the compositor.
+        #
+        # The position-advances and seek-lands-within-a-frame assertions the
+        # spec also asks for need the integration_test harness, which arrives
+        # with the media_kit bring-up (build order step 2).
+        run: |
+          ffmpeg -hide_banner -loglevel error \
+            -f lavfi -i testsrc=size=640x360:rate=25:duration=10 \
+            -f lavfi -i sine=frequency=440:duration=10 \
+            -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest /tmp/smoke.mp4
+
+          export DISPLAY=:99
+          # Software GL: the runner has no GPU, and the point here is the decode
+          # and upload path, not the driver.
+          export LIBGL_ALWAYS_SOFTWARE=1
+          Xvfb :99 -screen 0 1280x720x24 -nolisten tcp > /tmp/xvfb.log 2>&1 &
+          sleep 3
+
+          cd build/linux/x64/release/bundle
+          ./kino /tmp/smoke.mp4 > /tmp/kino.log 2>&1 &
+          KINO_PID=$!
+          # The first frame takes a while: engine init, then libmpv's own.
+          sleep 20
+
+          if ! kill -0 "$KINO_PID" 2>/dev/null; then
+            echo "::error::kino exited during playback"
+            cat /tmp/kino.log
+            exit 1
+          fi
+
+          import -display :99 -window root /tmp/smoke.png
+          DEVIATION="$(identify -format '%[standard-deviation]' /tmp/smoke.png)"
+          echo "screenshot standard deviation: $DEVIATION"
+          # An empty window is one flat colour. The test pattern is anything but.
+          if [ "$(printf '%.0f' "$DEVIATION")" -lt 1000 ]; then
+            echo "::error::the window rendered no picture"
+            cat /tmp/kino.log
+            exit 1
+          fi
+
+          kill "$KINO_PID" 2>/dev/null || true
+          echo "playback rendered picture"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-test
+          path: /tmp/smoke.png
+          if-no-files-found: ignore
+
+      - name: Build the Debian package
+        run: bash packaging/build_deb.sh
+
+      - name: Validate the package
+        run: |
+          desktop-file-validate packaging/deb/ch.alpinsuite.Kino.desktop
+          # Lintian findings are informational here: several of its policy
+          # checks do not apply to a self-contained bundled application.
+          lintian --no-tag-display-limit build/dist/*.deb || true
+          # sed rather than head: head closes the pipe early, which makes
+          # dpkg-deb report a broken pipe and litter the log with an error
+          # for a step that actually succeeded.
+          dpkg-deb --contents build/dist/*.deb | sed -n '1,40p'
+
+          # The dependency media_kit dlopen()s and shlibdeps therefore cannot
+          # see. Losing it turns the package into a window that plays nothing.
+          if ! dpkg-deb --field build/dist/*.deb Depends | grep -q libmpv; then
+            echo "::error::the package does not depend on libmpv"
+            exit 1
+          fi
+
+      - name: Smoke-test the install
+        run: |
+          apt-get install -y ./build/dist/*.deb
+
+          # Runtime files are checked on disk: a missing path here is a broken
+          # install.
+          for path in \
+            /usr/bin/kino \
+            /usr/lib/kino/kino \
+            /usr/lib/kino/data/icudtl.dat \
+            /usr/share/applications/ch.alpinsuite.Kino.desktop \
+            /usr/share/icons/hicolor/256x256/apps/ch.alpinsuite.Kino.png \
+            /usr/share/metainfo/ch.alpinsuite.Kino.metainfo.xml
+          do
+            if [ -e "$path" ]; then
+              echo "  installed  $path"
+            else
+              echo "  MISSING    $path"
+              exit 1
+            fi
+          done
+          test -x /usr/bin/kino
+
+          # Documentation is checked inside the package instead of on disk.
+          # Container base images ship /etc/dpkg/dpkg.cfg.d/excludes, which
+          # drops /usr/share/man and most of /usr/share/doc during extraction,
+          # so a filesystem check would test the image's policy rather than
+          # whether the package ships the files.
+          dpkg-deb --contents build/dist/*.deb > /tmp/contents.txt
+          for path in \
+            ./usr/share/man/man1/kino.1.gz \
+            ./usr/share/doc/kino/copyright \
+            ./usr/share/doc/kino/changelog.gz
+          do
+            if grep -q " $path$" /tmp/contents.txt; then
+              echo "  packaged   $path"
+            else
+              echo "  MISSING    $path (not in the .deb)"
+              exit 1
+            fi
+          done
+
+      - name: Package the portable tarball
+        run: |
+          VERSION="$(bash tools/set_version.sh)"
+          mkdir -p build/dist
+          tar -czf "build/dist/kino-${VERSION}-linux-x64.tar.gz" \
+            -C build/linux/x64/release/bundle .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: build/dist/*
+          if-no-files-found: error

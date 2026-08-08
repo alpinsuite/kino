@@ -1,0 +1,43 @@
+.TH KINO 1 "2026" "Kino" "User Commands"
+.SH NAME
+kino \- play and review video
+.SH SYNOPSIS
+.B kino
+.RI [ FILE | URL "]..."
+.SH DESCRIPTION
+.B Kino
+is a video player for the Linux desktop, built on libmpv. It plays every
+container and codec FFmpeg supports, decodes in hardware where the driver
+allows and falls back to software where it does not, and renders subtitles
+through libass.
+.PP
+Several arguments are opened as a playlist. Both filesystem paths and
+.B http(s)
+URLs are accepted.
+.SH REVIEW MODE
+Review mode adds SMPTE timecode, frame-exact stepping and seeking, in and out
+marks, and notes attached to a specific frame. Notes are written to a sidecar
+file beside the media
+.RB ( <video>.kino.json )
+and never modify the video. They can be exported as CSV, Markdown or PDF, and a
+second reviewer's set can be imported and merged.
+.SH FILES
+.TP
+.I $XDG_CONFIG_HOME/kino/settings.json
+Preferences. Human-readable and hand-editable on purpose.
+.TP
+.I ~/.local/share/ch.alpinsuite.kino/
+Annotation sidecars for media whose own directory is not writable.
+.TP
+.I $XDG_CACHE_HOME/kino/
+Seek-bar thumbnails and resume positions. Safe to delete.
+.SH ENVIRONMENT
+.TP
+.B XDG_RUNTIME_DIR
+Holds the per-file locks that let opening an already-playing file raise that
+window instead of opening a second one. Without it, every open makes a new
+window.
+.SH SEE ALSO
+.BR mpv (1)
+.SH BUGS
+https://github.com/AlpinSuite/kino/issues
