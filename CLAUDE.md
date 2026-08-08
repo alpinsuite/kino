@@ -28,8 +28,13 @@ git config --global --add safe.directory /opt/flutter   # required when running 
 export PATH="/opt/flutter/bin:$PATH"
 
 apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
-                   libmpv-dev mpv
+                   libmpv-dev libepoxy-dev mpv
 ```
+
+`media_kit_video`'s CMake links `PkgConfig::mpv` and `PkgConfig::epoxy`, so both
+`.pc` files have to exist or the Linux build fails inside CMake. `libgtk-3-dev`
+usually drags `libepoxy-dev` in; both are named explicitly because "usually" is
+not a build dependency.
 
 Pin **3.44.8** — it is what CI uses.
 
