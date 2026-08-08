@@ -164,12 +164,43 @@ The same reasoning applies to `Uri.file(..., windows: false)` in
 `parseArguments`: a colon is a legal character in a POSIX filename, and
 `2026-08-07 14:12.mkv` is what a camera writes.
 
+## 13. The Linux build dependencies belong to media_kit, not to Kino.
+
+Learned the hard way, over four red CI runs. The container needs `libmpv-dev`
+and `libepoxy-dev` (`media_kit_video` links `PkgConfig::mpv` and
+`PkgConfig::epoxy`), `libasound2-dev` (`volume_controller` does
+`find_package(ALSA REQUIRED)`), and `build-essential` (`media_kit_libs_linux`
+builds mimalloc by shelling out to `cmake` and then `make`).
+
+None of that is discoverable from this repository's own source, and the package
+list was inherited from Paint, which has no `media_kit` and so needed none of
+it. Each omission failed inside a nested build a long way from anything Flutter
+prints.
+
+The `Verify the native toolchain` step therefore asserts every one of them by
+name and fails with the missing names in an annotation, rather than letting the
+build discover them one per round.
+
+## 14. CI reports failures through annotations.
+
+Actions logs need an authenticated session, and job summaries render
+client-side, so neither is readable by a maintainer without `gh` or a browser
+login. Annotations are, through the public API.
+
+The build step and the licence audit both emit their output as `%0A`-encoded
+annotations. This is not decoration: three CI rounds were spent learning nothing
+because a failing build could only say `exit code 1`, and one more was spent
+because the extraction matched line by line and threw away the line naming the
+package CMake could not find.
+
 ## Still open
 
 - **Position-advances and seek-lands-within-a-frame assertions in CI.** The
-  smoke test currently proves a picture reached the compositor; the numeric
-  assertions need the `integration_test` harness, which comes with the
-  `media_kit` bring-up.
-- **Whether the AppImage's bundled-library manifest resolves every `.so` to a
-  package.** See the open questions in [LICENSING.md](LICENSING.md).
+  smoke test proves a picture reached the compositor; the numeric assertions
+  need the `integration_test` harness.
+- **Hardware decode, Wayland, and the absence of a per-frame CPU copy** are all
+  unproven — CI has no GPU and the smoke test is Xvfb. See
+  [FEATURES.md](FEATURES.md).
+- **The AppImage has never been built.** Only `release.yml` builds it, so both
+  the bundling and its licence manifest are untested.
 - **Resume threshold semantics** — how close to the end counts as "watched".

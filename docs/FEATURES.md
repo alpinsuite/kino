@@ -12,7 +12,24 @@ Status against the build specification. `·` not started, `~` partial, `✓` don
 | ✓ | Packaging: `.deb`, AppImage, APT repo, AppStream, desktop entry, man page |
 | ✓ | Slate pinned to `v0.1.0` and installed once above the tree |
 | ✓ | i18n wiring with DE, FR, IT, EN |
-| ~ | Playback smoke test in CI — proves a picture renders; position and seek assertions pending |
+| ✓ | CI green end to end: build, licence audit, headless playback, `.deb` build, install |
+| ~ | Playback smoke test — proves picture reaches the compositor; position and seek assertions pending the `integration_test` harness |
+
+### What the green CI run does and does not prove
+
+Build order step 2 is *partly* discharged. Proven on Ubuntu 22.04, X11:
+
+- `flutter build linux --release` compiles with `media_kit`.
+- A generated clip plays headlessly and renders actual picture — the texture
+  bridge works, which was the make-or-break risk.
+- The `.deb` builds, declares `libmpv2 | libmpv1`, validates and installs.
+
+Not proven, and not to be described as proven:
+
+- **Hardware decode.** CI has no GPU and runs `LIBGL_ALWAYS_SOFTWARE=1`.
+- **Wayland.** The smoke test is Xvfb, so X11 only.
+- **No per-frame CPU copy**, and 4K60 without dropped frames.
+- **The AppImage.** Built only by `release.yml`; it has never run.
 
 ## Playback core
 

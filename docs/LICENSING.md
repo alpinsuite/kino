@@ -127,12 +127,26 @@ here and in `DECISIONS.md` if it happens.
 
 ## Open questions
 
-These need answering on a Linux machine before v1, and are tracked in
-`DECISIONS.md`:
+### Answered
 
-- **Confirm mpv's licence in each target distribution's build.** Expected
-  GPL-2.0-or-later everywhere; `tools/audit_licenses.sh` asserts it, but the
-  assertion has not yet run against a real bundle.
+**mpv on Ubuntu 22.04 is GPL-2+, confirmed against a real build.** The first
+green CI run reported `libmpv.so.1` as coming from a package whose copyright
+file declares:
+
+```
+BSD-2-clause BSD-3-clause Expat GPL-2+ ISC LGPL-2.1+
+```
+
+`GPL-2+` — the "or later" — is what makes the combination lawful, and it is now
+asserted by `tools/audit_licenses.sh` on every build and every release rather
+than assumed. Confirming it for Debian 12/13 and for the AppImage's bundle
+is still outstanding.
+
+### Still open
+
 - **Confirm the AppImage manifest resolves every bundled `.so` to a package.**
   The lookup in `build_appimage.sh` guesses the multiarch path; a library found
   somewhere else will be listed as `unknown`, which is not good enough to ship.
+  The AppImage is built only by `release.yml`, so this has never run.
+- **Confirm mpv's licence on the other target distributions**, in particular
+  wherever `libmpv2` rather than `libmpv1` is what gets installed.
