@@ -28,19 +28,25 @@ git config --global --add safe.directory /opt/flutter   # required when running 
 export PATH="/opt/flutter/bin:$PATH"
 
 apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
-                   build-essential libmpv-dev libepoxy-dev mpv
+                   build-essential libmpv-dev libepoxy-dev libasound2-dev mpv
 ```
 
-Three of those are needed by `media_kit` rather than by Flutter, and a bare
-container has none of them:
+Four of those are pulled in by `media_kit`'s plugin graph rather than by
+Flutter, and a bare container has none of them. Each one, omitted, fails inside
+a nested build a long way from anything Flutter prints:
 
-- `libmpv-dev` and `libepoxy-dev` — `media_kit_video`'s CMake links
-  `PkgConfig::mpv` and `PkgConfig::epoxy`, so both `.pc` files must exist.
+- `libmpv-dev`, `libepoxy-dev` — `media_kit_video`'s CMake links
+  `PkgConfig::mpv` and `PkgConfig::epoxy`.
+- `libasound2-dev` — `volume_controller`, a transitive dependency, does
+  `find_package(ALSA REQUIRED)`.
 - `build-essential` — `media_kit_libs_linux` builds mimalloc by shelling out to
-  `cmake` with the default generator and then to **`make`**. Flutter's own build
-  uses clang and ninja and never needs either, so this omission fails only once
-  media_kit is in the graph, and fails inside a nested build a long way from the
-  Flutter output.
+  `cmake` with the default generator and then to `make`. Flutter's own build
+  uses clang and ninja and never touches either.
+
+The rule of thumb: the Linux build dependencies are `media_kit`'s, not Kino's,
+and they are not discoverable from this repository's own source. The
+`Verify the native toolchain` CI step asserts every one of them by name for
+that reason.
 
 Pin **3.44.8** — it is what CI uses.
 

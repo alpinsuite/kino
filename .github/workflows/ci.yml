@@ -105,7 +105,7 @@ jobs:
             clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
             build-essential \
             dpkg-dev apt-utils file desktop-file-utils lintian \
-            librsvg2-bin libmpv-dev libepoxy-dev mpv \
+            librsvg2-bin libmpv-dev libepoxy-dev libasound2-dev mpv \
             xvfb x11-utils imagemagick ffmpeg
 
       - uses: actions/checkout@v4
@@ -138,6 +138,13 @@ jobs:
           STATE=""
           MISSING=""
           for module in gtk+-3.0 mpv epoxy; do
+            if version="$(pkg-config --modversion "$module" 2>/dev/null)"; then
+              STATE="$STATE $module=$version"
+            else
+              MISSING="$MISSING $module"
+            fi
+          done
+          for module in alsa; do
             if version="$(pkg-config --modversion "$module" 2>/dev/null)"; then
               STATE="$STATE $module=$version"
             else

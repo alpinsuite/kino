@@ -35,7 +35,7 @@ jobs:
             clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
             build-essential \
             dpkg-dev apt-utils desktop-file-utils librsvg2-bin \
-            libmpv-dev libepoxy-dev mpv
+            libmpv-dev libepoxy-dev libasound2-dev mpv
 
       - uses: actions/checkout@v4
         with:
