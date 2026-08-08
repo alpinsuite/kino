@@ -35,11 +35,9 @@ class EmptyState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              // No icon: the pinned Slate has no folder glyph, and the media
-              // and file icons this application needs are a contribution to
-              // the kit rather than something to draw locally (spec §0.4).
               SlateButton(
                 label: strings.emptyStateOpen,
+                icon: SlateIcons.folder,
                 kind: SlateButtonKind.primary,
                 onPressed: onOpen,
               ),

@@ -144,8 +144,13 @@ PDF Ninja will want the same roles for its annotation overlays.
 
 The docked row is the same controls in a shape that needs no new palette roles.
 It is replaced wholesale by `SlateOverlayBar` when that lands, along with the
-media icon set — the pinned `slate_ui` v0.1.0 has no play, pause or folder
-glyph, which is why the buttons currently carry labels instead.
+media icon set.
+
+`slate_ui` v0.2.0 added 24 glyphs — `folder` among them, so the empty state's
+open button has its icon — but **neither the `scrim`/`overlay` roles nor any
+media glyph** (play, pause, stop, previous, next, frame-step, volume, subtitles,
+fullscreen, mark-in, mark-out). Both are still outstanding upstream, and the
+transport buttons carry labels until they land.
 
 ## 12. XDG paths are POSIX-context, and the environment is injected.
 

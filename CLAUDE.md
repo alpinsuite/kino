@@ -133,8 +133,10 @@ are running — it matches your own shell and kills the session.
 
 - `dart format` reformats aggressively. Anchor-based patch scripts written
   against pre-format source will stop matching — read the file first.
-- The pinned `slate_ui` v0.1.0 has a *smaller* icon set than the ui-kit working
-  tree. Check the pub cache checkout, not `../ui-kit`, before using a glyph.
+- The pinned `slate_ui` tag usually has a *smaller* icon set than the ui-kit
+  working tree. Check the pub cache checkout, or `git show <tag>:lib/src/
+  slate_icons.dart`, before using a glyph — not `../ui-kit`. At v0.2.0 there is
+  still no media glyph and no `scrim` palette role.
 - `Uri.file` applies the *host's* path rules. On a developer's Windows machine
   it rejects a colon that is perfectly legal in a POSIX filename; pass
   `windows: false`. `XdgPaths` pins a POSIX `path.Context` for the same reason.
