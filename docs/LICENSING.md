@@ -40,6 +40,21 @@ built only on `ldd` would report success having checked everything except the
 one dependency that decides whether Kino may ship at all. The script resolves it
 through `ldconfig` and fails if it is absent.
 
+### What the audit gates, and what it merely lists
+
+The distinction matters, and getting it wrong once made the audit fail on
+`libx11-6`:
+
+- **Gated** — libraries Kino *distributes*: everything inside the build bundle,
+  plus libmpv. Their licences become Kino's obligation, so an unrecognised one
+  fails the build.
+- **Listed** — libraries the package merely *depends* on: the GTK, X11 and glibc
+  stack. The distribution ships those and already meets its own obligations for
+  them. Gating on them means auditing most of a desktop, and many of their
+  copyright files are free prose rather than machine-readable DEP-5, so they are
+  inventoried and not gated. Depending on `libx11` has never been a licensing
+  question.
+
 [gpl13]: https://www.gnu.org/licenses/gpl-3.0.html#section13
 
 ## FFmpeg is licensed twice
