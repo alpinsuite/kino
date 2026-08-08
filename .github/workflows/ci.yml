@@ -125,23 +125,38 @@ jobs:
 
       - run: flutter pub get
 
-      - name: Report the native toolchain
-        # media_kit_video's CMake hard-requires the mpv and epoxy pkg-config
-        # modules and links PkgConfig::mpv / PkgConfig::epoxy. A missing .pc
-        # file fails the build a long way from its cause, so the versions are
-        # recorded before anything depends on them.
+      - name: Verify the native toolchain
+        # Asserts rather than prints. media_kit_video's CMake links
+        # PkgConfig::mpv and PkgConfig::epoxy, and media_kit_libs_linux builds
+        # mimalloc by shelling out to cmake and make — none of which Flutter's
+        # own build needs, so a bare container satisfies Flutter and then fails
+        # deep inside a nested build.
+        #
+        # The result is reported as an annotation because that is the only
+        # channel an unauthenticated reader can see.
         run: |
-          {
-            echo "## Native toolchain"
-            echo
-            echo '| pkg-config module | version |'
-            echo '| --- | --- |'
-            for module in gtk+-3.0 mpv epoxy; do
-              echo "| \`$module\` | $(pkg-config --modversion "$module" 2>&1 \
-                || echo 'MISSING') |"
-            done
-            echo
-          } | tee -a "$GITHUB_STEP_SUMMARY"
+          STATE=""
+          MISSING=""
+          for module in gtk+-3.0 mpv epoxy; do
+            if version="$(pkg-config --modversion "$module" 2>/dev/null)"; then
+              STATE="$STATE $module=$version"
+            else
+              MISSING="$MISSING $module"
+            fi
+          done
+          for tool in cmake ninja make cc c++ pkg-config; do
+            if path="$(command -v "$tool" 2>/dev/null)"; then
+              STATE="$STATE $tool=$path"
+            else
+              MISSING="$MISSING $tool"
+            fi
+          done
+
+          if [ -n "$MISSING" ]; then
+            echo "::error::missing from the build container:$MISSING"
+            exit 1
+          fi
+          echo "::notice::toolchain$STATE"
 
       - name: Build release bundle
         # The failure goes into the job summary, not only the log. Actions logs
@@ -174,12 +189,17 @@ jobs:
             # an unauthenticated reader — the job summary renders client-side on
             # the run page and the logs need a session, so without this a broken
             # build says only "exit code 1" to anyone not signed in.
-            ERRORS="$(grep -E 'CMake Error|No package|FATAL|error:|not found' \
-              /tmp/build.log | head -8 || true)"
-            [ -n "$ERRORS" ] || ERRORS="$(tail -8 /tmp/build.log)"
-            printf '%s\n' "$ERRORS" | while IFS= read -r line; do
-              printf '::error::%s\n' "$line"
-            done
+            #
+            # With trailing context, and as ONE annotation rather than one per
+            # line: a CMake error's first line is boilerplate naming
+            # FindPackageHandleStandardArgs, and the line that says which
+            # package was not found comes after it. Matching line by line threw
+            # that away and cost a round.
+            DETAIL="$(grep -m1 -A15 'CMake Error' /tmp/build.log || true)"
+            [ -n "$DETAIL" ] || DETAIL="$(tail -30 /tmp/build.log)"
+            # %0A is how a multi-line annotation message is encoded.
+            echo "::error::$(printf '%s\n' "$DETAIL" |
+              awk '{gsub(/%/, "%25"); printf "%s%%0A", $0}')"
 
             exit 1
           fi
