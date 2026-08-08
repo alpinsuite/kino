@@ -214,7 +214,24 @@ jobs:
       - name: Audit the licences of everything linked
         # A distribution quietly swapping in a differently-licensed build of the
         # media stack is the kind of change nobody notices until someone asks.
-        run: bash tools/audit_licenses.sh
+        #
+        # The inventory is emitted as an annotation whether or not it passes:
+        # §6.1 asks for a step "listing the licences of bundled native
+        # libraries", and a list written only to an unreadable log is not one.
+        run: |
+          set +e
+          bash tools/audit_licenses.sh > /tmp/audit.log 2>&1
+          STATUS=$?
+          set -e
+
+          cat /tmp/audit.log
+          ENCODED="$(awk '{gsub(/%/, "%25"); printf "%s%%0A", $0}' /tmp/audit.log)"
+          if [ "$STATUS" -eq 0 ]; then
+            echo "::notice::licence audit%0A$ENCODED"
+          else
+            echo "::error::licence audit failed%0A$ENCODED"
+            exit 1
+          fi
 
       - name: Smoke-test playback
         # Video pipelines break silently on a dependency bump — a working build

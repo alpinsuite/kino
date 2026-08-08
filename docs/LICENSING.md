@@ -34,6 +34,12 @@ distributions do not do this, but a vendor might.
 `tools/audit_licenses.sh` runs in CI and on every release for exactly this
 reason.
 
+Note that the audit has to look for libmpv *deliberately*. Because `media_kit`
+`dlopen`s it, libmpv appears in no ELF and `ldd` never mentions it — an audit
+built only on `ldd` would report success having checked everything except the
+one dependency that decides whether Kino may ship at all. The script resolves it
+through `ldconfig` and fails if it is absent.
+
 [gpl13]: https://www.gnu.org/licenses/gpl-3.0.html#section13
 
 ## FFmpeg is licensed twice
