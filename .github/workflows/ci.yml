@@ -128,27 +128,46 @@ jobs:
         # media_kit_video's CMake hard-requires the mpv and epoxy pkg-config
         # modules and links PkgConfig::mpv / PkgConfig::epoxy. A missing .pc
         # file fails the build a long way from its cause, so the versions are
-        # printed before anything depends on them.
+        # recorded before anything depends on them.
         run: |
-          for module in gtk+-3.0 mpv epoxy; do
-            printf '%-12s %s\n' "$module" \
-              "$(pkg-config --modversion "$module" 2>&1 || echo MISSING)"
-          done
+          {
+            echo "## Native toolchain"
+            echo
+            echo '| pkg-config module | version |'
+            echo '| --- | --- |'
+            for module in gtk+-3.0 mpv epoxy; do
+              echo "| \`$module\` | $(pkg-config --modversion "$module" 2>&1 \
+                || echo 'MISSING') |"
+            done
+            echo
+          } | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Build release bundle
-        # The failure is echoed as annotations, not only into the log. Actions
-        # logs need an authenticated session to read; annotations do not, and
-        # this is the step whose breakage matters most.
+        # The failure goes into the job summary, not only the log. Actions logs
+        # need an authenticated session to read; the summary renders on the run
+        # page for anyone, and this is the step whose breakage matters most.
+        #
+        # Written without a pipeline on purpose: an earlier attempt piped into
+        # tee and post-processed with grep, and under `pipefail` a grep that
+        # matched nothing took the script down with exit 2 before it could
+        # report anything — which is a worse failure than the one it was
+        # reporting on.
         run: |
-          set -o pipefail
-          if ! flutter build linux --release 2>&1 | tee /tmp/build.log; then
-            echo "::group::last 80 lines of the build"
-            tail -80 /tmp/build.log
-            echo "::endgroup::"
-            grep -m5 -E "CMake Error|No package '[^']*' found|error:" \
-              /tmp/build.log | while IFS= read -r line; do
-              echo "::error::$line"
-            done
+          set +e
+          flutter build linux --release > /tmp/build.log 2>&1
+          STATUS=$?
+          set -e
+
+          tail -150 /tmp/build.log
+
+          if [ "$STATUS" -ne 0 ]; then
+            {
+              echo "## Linux build failed (exit $STATUS)"
+              echo
+              echo '```'
+              tail -150 /tmp/build.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
 
