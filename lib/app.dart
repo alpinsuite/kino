@@ -9,6 +9,26 @@ import 'core/theme.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'ui/app_shell.dart';
 
+/// Picks the locale to render in, falling back to English.
+///
+/// Flutter's default resolution returns `supportedLocales.first` when nothing
+/// matches, and the generated list is alphabetical — so `de` is first, and a
+/// machine with no `LANG` set got a German interface. That is not hypothetical:
+/// it is what the CI smoke-test screenshot showed, and it would have been the
+/// experience of anyone launching Kino from a bare session or a service.
+///
+/// Matching is by language code alone. `de_CH` and `de_AT` should both get the
+/// German strings rather than falling through to English.
+@visibleForTesting
+Locale resolveLocale(Locale? requested, Iterable<Locale> supported) {
+  if (requested != null) {
+    for (final candidate in supported) {
+      if (candidate.languageCode == requested.languageCode) return candidate;
+    }
+  }
+  return const Locale('en');
+}
+
 class KinoApp extends StatefulWidget {
   const KinoApp({
     this.initialPlaylist = const <Uri>[],
@@ -64,6 +84,7 @@ class _KinoAppState extends State<KinoApp> {
             theme: slate.toMaterialTheme(),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
+            localeResolutionCallback: resolveLocale,
             // The Slate theme is installed once, above everything, so every
             // widget below reaches it through `context.slate`.
             builder: (context, child) => SlateTheme(
