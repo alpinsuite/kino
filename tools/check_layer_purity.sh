@@ -25,6 +25,11 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
+# Build output and the pub tool cache both sit under packages/, and both are
+# full of generated files that mention every import in the program. Grepping
+# them turns this gate into a coin toss that fails after any local test run.
+SKIP=(--exclude-dir=build --exclude-dir=.dart_tool --exclude-dir=.git)
+
 STATUS=0
 fail() {
   echo "  FAIL  $1" >&2
@@ -37,7 +42,7 @@ report() {
 
 echo "Checking that kino_review is free of Flutter..."
 REVIEW_IMPORTS="$(
-  grep -rhoE "^import '[^']+'" packages/kino_review/lib/ |
+  grep -rhoE "${SKIP[@]}" "^import '[^']+'" packages/kino_review/lib/ |
     sed "s/^import '//; s/'$//" |
     grep -E '^package:flutter' |
     sort -u || true
@@ -58,7 +63,7 @@ fi
 
 echo "Checking that media_kit stays inside kino_media..."
 ESCAPED="$(
-  grep -rlE "^import 'package:media_kit" lib/ packages/ 2>/dev/null |
+  grep -rlE "${SKIP[@]}" "^import 'package:media_kit" lib/ packages/ 2>/dev/null |
     grep -v '^packages/kino_media/lib/' |
     sort -u || true
 )"
@@ -72,7 +77,8 @@ fi
 
 echo "Checking that kino_core keeps out of the widget layer..."
 WIDGETS="$(
-  grep -rhoE "^import 'package:flutter/(material|widgets|cupertino)\.dart'" \
+  grep -rhoE "${SKIP[@]}" \
+    "^import 'package:flutter/(material|widgets|cupertino)\.dart'" \
     packages/kino_core/lib/ 2>/dev/null | sort -u || true
 )"
 if [[ -n "$WIDGETS" ]]; then
@@ -85,7 +91,7 @@ fi
 
 echo "Checking that no library imports the application..."
 UPWARDS="$(
-  grep -rlE "^import 'package:kino/" packages/ 2>/dev/null | sort -u || true
+  grep -rlE "${SKIP[@]}" "^import 'package:kino/" packages/ 2>/dev/null | sort -u || true
 )"
 if [[ -n "$UPWARDS" ]]; then
   fail "a package under packages/ imports the application:"
