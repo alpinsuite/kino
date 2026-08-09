@@ -2,6 +2,10 @@
 
 Status against the build specification. `·` not started, `~` partial, `✓` done.
 
+For the same picture arranged as work to do — the specification's build order,
+what each step still needs, and a recommended sequence — see
+[TODO.md](TODO.md).
+
 ## Foundation
 
 | | |

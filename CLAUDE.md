@@ -14,7 +14,9 @@ The thing that makes it worth building rather than packaging Celluloid is
 **review mode**: frame-exact stepping, SMPTE timecode, in/out marks and
 timestamped notes exported as CSV, Markdown or PDF. Everything else is table
 stakes that make that usable. Read [docs/DECISIONS.md](docs/DECISIONS.md) before
-proposing anything structural.
+proposing anything structural, and [docs/TODO.md](docs/TODO.md) to see what is
+actually built — the foundations are real, the interface is a shell, and eight
+`PlaybackController` methods currently have no caller anywhere.
 
 ## Environment
 
