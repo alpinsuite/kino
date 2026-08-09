@@ -120,8 +120,21 @@ available and `org.freedesktop.ScreenSaver` on X11. `wakelock_plus` covers part
 of that, and two inhibitors fighting over one session is how a screen ends up
 never blanking at all.
 
-**Status: not yet implemented.** The flag is set so that when it is, there is
-nothing to un-wire.
+**Implemented over D-Bus, and that is a departure from §0.5.** The
+specification asks for the Wayland `idle-inhibit-unstable-v1` protocol on
+Wayland and `org.freedesktop.ScreenSaver` on X11. The Wayland protocol needs a
+`wl_surface` to inhibit *against*, and Flutter does not expose one to Dart —
+honouring it literally would mean C in `linux/` reaching into the GTK embedder.
+
+`DBusIdleInhibitor` calls `org.freedesktop.ScreenSaver`, falling back to
+`org.freedesktop.PowerManagement.Inhibit`. This covers the same machines:
+GNOME and KDE both implement the ScreenSaver interface under Wayland as well as
+X11, because every application predating the protocol still calls it. A
+compositor implementing neither will blank the screen, and closing that gap
+properly means native code.
+
+The policy — inhibit while playing, release on pause, on end, and on failure —
+is split from the transport so it can be tested without a bus, and it is.
 
 ## 10. Multiple windows are allowed; the runner is `G_APPLICATION_NON_UNIQUE`.
 
@@ -198,6 +211,38 @@ annotations. This is not decoration: three CI rounds were spent learning nothing
 because a failing build could only say `exit code 1`, and one more was spent
 because the extraction matched line by line and threw away the line naming the
 package CMake could not find.
+
+## 15. Keyboard bindings are a table, not a switch.
+
+`KinoCommand` plus a `Map<ShortcutActivator, KinoCommand>` of defaults, with
+`AppActions` implementing each command once. Remapping (§4) then replaces a map
+and touches nothing else, and the menu, overlay bar and context menu can route
+through the same commands rather than growing second implementations — the
+failure where a menu item and its shortcut behave subtly differently begins
+with two pieces of code.
+
+Defaults follow mpv where a sensible equivalent exists. Two departures:
+
+- **Seeking follows §1 rather than mpv.** Arrows ±5 s, Shift ±1 s, Ctrl ±60 s.
+  mpv puts ±60 s on bare Up/Down, which leaves §1's scheme nowhere to go; here
+  Up/Down carry volume, as in every graphical player.
+- **`q` does not quit.** It does in mpv, and in a window that is one keystroke
+  from discarding a two-hour position. Quit is `Ctrl+Q`. A test asserts no bare
+  key is ever bound to it, and another that `Esc` leaves fullscreen and never
+  closes.
+
+## 16. MPRIS reports `ended` as `Stopped`, not `Paused`.
+
+MPRIS knows three states and Kino has six. The collapse is mostly obvious;
+`ended` is the one worth recording. Reporting it as `Paused` leaves the shell
+offering to resume a file that has finished, which is what makes a media widget
+feel stuck.
+
+Volume is clamped to 1.0 on the way out, because Kino goes to 150 % and the
+shell slider does not — a value above the range renders as zero on some shells.
+`Position` is deliberately never signalled: MPRIS says to poll it, and emitting
+at the engine's update rate would put several D-Bus messages a second in front
+of every listener on the desktop.
 
 ## Still open
 

@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:kino_media/kino_media.dart';
 import 'package:provider/provider.dart';
 import 'package:slate_ui/slate_ui.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'core/theme.dart';
+import 'desktop/idle_inhibitor.dart';
+import 'desktop/mpris.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'ui/app_shell.dart';
 
@@ -56,8 +59,43 @@ class _KinoAppState extends State<KinoApp> {
       // initialisation did, so it is not attempted.
       : UnavailablePlaybackController(widget.engineFailure!);
 
+  MprisService? _mpris;
+  IdleInhibitPolicy? _idle;
+  IdleInhibitor? _inhibitor;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_startDesktopIntegration());
+  }
+
+  /// MPRIS and idle inhibition (spec §0.5).
+  ///
+  /// Both are best-effort by construction. A session without a bus, or a
+  /// desktop offering neither inhibit service, costs the shell controls and the
+  /// screen-blanking guard — it must never cost playback, which is the mistake
+  /// that made the window fail to open when libmpv was missing.
+  Future<void> _startDesktopIntegration() async {
+    final inhibitor = createIdleInhibitor();
+    if (inhibitor != null) {
+      _inhibitor = inhibitor;
+      _idle = IdleInhibitPolicy(playback: _playback, inhibitor: inhibitor)
+        ..start();
+    }
+
+    _mpris = createMprisService(
+      playback: _playback,
+      onRaise: windowManager.focus,
+      onQuit: windowManager.close,
+    );
+    await _mpris?.start();
+  }
+
   @override
   void dispose() {
+    _idle?.stop();
+    unawaited(_inhibitor?.dispose() ?? Future<void>.value());
+    unawaited(_mpris?.dispose() ?? Future<void>.value());
     // The engine holds a libmpv handle and a texture; leaking either survives
     // the widget tree.
     unawaited(_playback.dispose());

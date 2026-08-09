@@ -47,6 +47,10 @@ dependencies:
   window_manager: ^0.5.2
   # State wiring (ChangeNotifier).
   provider: ^6.1.5
+  # D-Bus, for MPRIS2 and idle inhibition (§0.5). Pure Dart — it speaks the
+  # wire protocol over the session socket, so there is no native code to build.
+  dbus: ^0.7.10
+
 
   collection: ^1.19.0
   intl: any

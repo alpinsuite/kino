@@ -7,12 +7,17 @@ code rather than from memory: the "no caller" notes below come from grepping
 `✓` done · `~` partial · `·` not started
 
 **Where we are.** The foundations are real and tested — CI is green end to end,
-the engine boundary works on two platforms, and `kino_review` is complete. The
-*interface* is a shell. Eight `PlaybackController` methods have no caller
-anywhere in `lib/`: the engine can step frames, change speed, select tracks,
-shift subtitle and audio delay, screenshot and seek to a frame, and nothing in
-the application asks it to. There are **no keyboard bindings at all**, which for
-a video player is the single largest gap.
+the engine boundary works on two platforms, and `kino_review` is complete.
+Keyboard control (§8) and the desktop integration (§9) are now built, which
+means the engine's capabilities are finally reachable: stepping, speed, delays,
+screenshots and the seek steps all had implementations and no callers until now.
+
+What remains is mostly *interface*. There is still no playlist, no preferences,
+no track menus, no track bar, and — the important one — **no review interface at
+all**, despite `kino_review` being the reason the module exists and being
+finished underneath. Two things are written but unverified: MPRIS and idle
+inhibit have never run against a real session bus, and build order step 2 is
+still open.
 
 ---
 
@@ -66,26 +71,39 @@ off the engine into `MediaInfo` and displayed nowhere.
 and **none has a caller**. Needs menus, an OSD readout for the delays, subtitle
 styling and an encoding override.
 
-## 8. Keyboard — · **nothing at all**
+## 8. Keyboard — ✓ core done
 
-No `Shortcuts`, no `Actions`, no key handling anywhere. For an application used
-in the dark this is the largest single gap. Defaults should match mpv;
-`Esc` exits fullscreen and never quits; `Space` toggles play. Remapping and an
-mpv-compatible preset come later, but the bindings themselves are overdue.
+`KinoCommand` + a default binding table + `AppActions`, wired with
+`CallbackShortcuts` under an autofocused `Focus`. mpv-compatible where sensible;
+the two departures are recorded in DECISIONS 15. `Esc` leaves fullscreen and
+never quits, and no bare key is bound to quit — both asserted by tests.
 
-Also unreachable without them: frame stepping (`.` and `,`), speed, screenshot,
-A–B loop, chapter jumps, the seek steps (±5 s, ±1 s with Shift, ±60 s with Ctrl).
+Bound and reachable now: play/pause, the three seek steps, frame stepping,
+volume, mute, speed, fullscreen, screenshot, subtitle and audio delay, theme.
 
-## 9. MPRIS2 and idle inhibit — ·
+| | |
+|---|---|
+| · | Remapping and persistence (needs §12) |
+| · | An mpv-compatible preset |
+| · | Chapter jumps, A–B loop, playlist next/previous — no command yet |
+| · | An OSD readout, so the delay and speed keys give feedback |
 
-§0.5 calls these non-negotiable, and DECISIONS 9 already sets
-`wakelock: false` so there is nothing to un-wire.
+## 9. MPRIS2 and idle inhibit — ~ written, unverified on a real bus
 
-- MPRIS2 over D-Bus: `org.mpris.MediaPlayer2` and `.Player`. Without it there
-  are no media keys and no entry in the GNOME/KDE shell controls.
-- Idle inhibit: Wayland `idle-inhibit-unstable-v1`, X11 `org.freedesktop.ScreenSaver`.
-  Release on pause. "The screen does not blank during playback, and does blank
-  when paused" is an acceptance criterion.
+Both implemented in pure Dart over `package:dbus`, both best-effort: a session
+without a bus costs the shell controls, never playback.
+
+| | |
+|---|---|
+| ✓ | MPRIS2 root and Player interfaces: properties, methods, `PropertiesChanged` |
+| ✓ | Idle inhibit via `org.freedesktop.ScreenSaver`, falling back to PowerManagement |
+| ✓ | The mapping and the inhibit policy are unit-tested |
+| · | **Never run against a real session bus.** No D-Bus on the development machine and no desktop in CI |
+| · | Media keys, and the GNOME/KDE shell entry, unverified |
+| · | `CanGoNext`/`CanGoPrevious` are false until there is a playlist |
+
+The Wayland `idle-inhibit-unstable-v1` protocol is *not* used; D-Bus is, and
+DECISIONS 9 explains why and what it costs.
 
 ## 10. Playlist panel — ·
 
@@ -158,14 +176,14 @@ composited still, sidecar load/save, and import.
 | · | Hardware decode on Intel and AMD with visible indicator — indicator built, never seen non-`Software` |
 | · | 4K60, no dropped frames, no per-frame CPU copy |
 | · | Seek within one frame — `seekToFrame` is exact by construction and untested against media |
-| · | Frame-step exact and repeatable — no caller |
+| ~ | Frame-step exact and repeatable — bound to `.` and `,`, never checked against media |
 | · | Embedded and external subtitles, styled ASS |
-| · | Subtitle/audio delay with OSD readout |
-| · | Media keys and shell integration (MPRIS) |
-| · | Screen does not blank during playback |
+| ~ | Subtitle/audio delay — bound to keys; no OSD readout |
 | · | Resume after a move or rename |
 | · | Identical on X11 and Wayland |
-| · | Every action reachable by keyboard |
+| ~ | Every action reachable by keyboard — the implemented ones are; remapping is not built |
+| ~ | Media keys and shell integration — written, never run on a bus |
+| ~ | Screen does not blank during playback — written, never run on a bus |
 | ✓ | All four locales render without overflow (tested at the 600×380 minimum) |
 | ✓ | No colour or size literal outside the Slate theme wiring |
 | ✓ | Licences enumerated, compatible and documented |
@@ -174,16 +192,20 @@ composited still, sidecar load/save, and import.
 
 ## Recommended order
 
-1. **Close the step-2 gate.** Build the AppImage in CI, not only on a tag, and
-   get one run against a GPU and a Wayland session. Everything below assumes
-   the engine works in the shipped artefacts, and that is still assumed.
-2. **Keyboard bindings.** Cheapest large win: eight engine capabilities are
-   already implemented and unreachable, so this is mostly wiring, and it makes
-   the player usable.
-3. **MPRIS2 and idle inhibit.** The two things Linux users notice missing within
-   five minutes, and the two things Flutter applications almost always skip.
-4. **Resume and recent files.** `MediaKey` and `XdgPaths` are built and tested;
-   this is the store and the wiring.
-5. **Review mode interface.** The reason the module exists. The hard part —
-   frame-exact arithmetic — is done and tested; what remains is interface.
-6. Track bar, side panel and preferences, alongside the `ui-kit` work they need.
+1. **Run it on a Linux desktop.** Two features now depend on it: MPRIS and idle
+   inhibit are written and cannot be verified anywhere else. Media keys either
+   work or they do not, and nothing short of a real session bus will say which.
+   Fold in the step-2 gate at the same time — build the AppImage in CI rather
+   than only on a tag, and get one run against a GPU and a Wayland session.
+2. **Review mode interface.** The reason the module exists, and the largest
+   remaining gap between what is built and what is usable. The hard part —
+   frame-exact arithmetic, marks, annotations, the sidecar, export — is done and
+   exhaustively tested; what is missing is entirely interface.
+3. **Resume and recent files.** `MediaKey` and `XdgPaths` are built and tested
+   and used by nothing; this is a store and some wiring.
+4. **Preferences.** Unlocks three things that are otherwise half-features:
+   persisted theme, remappable keys, and the resume threshold.
+5. **An OSD.** The delay and speed keys currently change something with no
+   feedback at all, which is close to useless in the dark.
+6. Track bar, side panel, track menus and the playlist, alongside the `ui-kit`
+   work each needs.
