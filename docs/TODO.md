@@ -113,7 +113,24 @@ no dialog.
 | ✓ | GTK application id matches the desktop file |
 | · | Same-file lock under `$XDG_RUNTIME_DIR` |
 | · | XDG recent manager registration |
-| · | System theme following (the controller exists; nothing changes its mode) |
+
+## 13a. Dark / light theme selection — ~ **half built, and invisible**
+
+Called out separately because it is a user-facing feature hiding inside a
+plumbing section. §0.5: *"follow light/dark onto `SlateThemeData.light()` /
+`.dark()`, manual override in preferences. Default to dark; it is a video
+player."*
+
+| | |
+|---|---|
+| ✓ | `ThemeController` with `system` / `light` / `dark`, resolving against the platform brightness |
+| ✓ | Repaints when the desktop theme changes, via `MediaQuery.platformBrightnessOf` |
+| · | **Nothing ever sets the mode.** It is fixed at `system` for the life of the process |
+| · | No way for a user to override it — no menu item, no shortcut, no preferences |
+| · | The choice is not persisted (needs §12) |
+
+The controller is the whole hard part and it is done. What is missing is a
+control that calls `theme.mode = …` and somewhere to remember the answer.
 
 ## 14. `.deb`, AppImage, APT repo — ~
 

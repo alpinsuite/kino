@@ -12,6 +12,10 @@ import 'package:kino_media/kino_media.dart';
 import 'package:provider/provider.dart';
 import 'package:slate_ui/slate_ui.dart';
 
+import '../core/app_actions.dart';
+import '../core/commands.dart';
+import '../core/theme.dart';
+import '../core/window_controls.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'empty_state.dart';
 import 'status_bar.dart';
@@ -24,9 +28,16 @@ import 'transport_bar.dart';
 /// behaviour — the playlist, review mode, keyboard bindings — gets its own
 /// controller rather than accumulating here.
 class AppShell extends StatefulWidget {
-  const AppShell({this.initialPlaylist = const <Uri>[], super.key});
+  const AppShell({
+    this.initialPlaylist = const <Uri>[],
+    this.windowControls = const PlatformWindowControls(),
+    super.key,
+  });
 
   final List<Uri> initialPlaylist;
+
+  /// Injected so a test can drive fullscreen and quit without a plugin.
+  final WindowControls windowControls;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -98,6 +109,30 @@ class _AppShellState extends State<AppShell> {
     final playback = context.read<PlaybackController>();
     final palette = context.slateColors;
 
+    final actions = AppActions(
+      playback: playback,
+      theme: context.read<ThemeController>(),
+      window: widget.windowControls,
+    );
+
+    return CallbackShortcuts(
+      // Built from the binding table rather than written out here, so remapping
+      // later (§4) replaces a map and touches nothing else.
+      bindings: <ShortcutActivator, VoidCallback>{
+        for (final binding in kDefaultKeyBindings.entries)
+          binding.key: () => unawaited(actions.run(binding.value)),
+      },
+      // A video player is driven from the keyboard with the lights off, so the
+      // window takes focus on open and there is nothing to click first.
+      child: Focus(autofocus: true, child: _body(context, playback, palette)),
+    );
+  }
+
+  Widget _body(
+    BuildContext context,
+    PlaybackController playback,
+    SlatePalette palette,
+  ) {
     return DropTarget(
       onDragDone: (details) {
         final first = details.files.firstOrNull;
