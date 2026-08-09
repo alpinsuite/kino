@@ -53,6 +53,7 @@ Not proven, and not to be described as proven:
 | ✓ | Empty state with the open action, drop hint and recent list |
 | ✓ | Video surface via the texture bridge, letterboxed in a themed fill |
 | ~ | Transport bar — docked and provisional; the overlay version needs Slate's `scrim` roles |
+| ✓ | Play/pause and mute as single buttons that change glyph (`slate_ui` v0.6.0) |
 | ~ | Status bar — resolution, codec, frame rate, decoder |
 | · | Track bar with chapters, buffered range, hover thumbnails, review pips |
 | · | Side panel, fullscreen, cursor auto-hide |

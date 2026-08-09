@@ -143,14 +143,20 @@ which the pinned Slate does not have. It is a kit change, not a local one, and
 PDF Ninja will want the same roles for its annotation overlays.
 
 The docked row is the same controls in a shape that needs no new palette roles.
-It is replaced wholesale by `SlateOverlayBar` when that lands, along with the
-media icon set.
+It is replaced wholesale by `SlateOverlayBar` when that lands.
 
-`slate_ui` v0.2.0 added 24 glyphs — `folder` among them, so the empty state's
-open button has its icon — but **neither the `scrim`/`overlay` roles nor any
-media glyph** (play, pause, stop, previous, next, frame-step, volume, subtitles,
-fullscreen, mark-in, mark-out). Both are still outstanding upstream, and the
-transport buttons carry labels until they land.
+The icon half is now done: `slate_ui` **v0.6.0** adds `play`, `pause`, `volume`
+and `volumeOff`, contributed upstream rather than drawn here, and the transport
+uses them. Play/pause is deliberately **one button that changes glyph**, not two
+that swap places — a control must not move under a pointer that is about to
+press it again.
+
+Still outstanding upstream, and still what blocks the overlay bar:
+
+- the **`scrim`/`overlay` palette roles** — translucent surfaces with a stated
+  contrast guarantee against moving picture;
+- the rest of the transport glyphs: stop, previous, next, frame-step,
+  subtitles, audio track, fullscreen, mark-in, mark-out.
 
 ## 12. XDG paths are POSIX-context, and the environment is injected.
 

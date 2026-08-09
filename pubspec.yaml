@@ -35,7 +35,7 @@ dependencies:
   slate_ui:
     git:
       url: https://github.com/alpinsuite/ui-kit.git
-      ref: v0.2.0
+      ref: v0.6.0
 
   # Native GTK open dialogs (§0.5). There is no Flatpak build, so the portal is
   # optional; the GTK backend routes through one anyway when it is running.

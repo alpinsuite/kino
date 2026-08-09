@@ -45,8 +45,13 @@ class TransportBar extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          SlateButton(
-            label: state.isPlaying
+          // One button that changes glyph, not two that swap places. The
+          // control must not move under a pointer that is about to press it
+          // again, which is what a play button and a pause button in different
+          // places would do.
+          SlateIconButton(
+            icon: state.isPlaying ? SlateIcons.pause : SlateIcons.play,
+            tooltip: state.isPlaying
                 ? strings.transportPause
                 : strings.transportPlay,
             onPressed: enabled ? onPlayOrPause : null,
@@ -72,8 +77,12 @@ class TransportBar extends StatelessWidget {
           ),
           Text(_timecode(state.duration), style: theme.dimTextStyle),
           SizedBox(width: theme.metrics.gap),
-          SlateButton(
-            label: state.muted
+          // The glyph shows the current state, and the tooltip says what
+          // pressing it will do — the convention every media player follows,
+          // and the one users already have in their fingers.
+          SlateIconButton(
+            icon: state.muted ? SlateIcons.volumeOff : SlateIcons.volume,
+            tooltip: state.muted
                 ? strings.transportUnmute
                 : strings.transportMute,
             onPressed: enabled ? onToggleMute : null,

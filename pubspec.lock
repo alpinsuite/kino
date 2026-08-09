@@ -630,11 +630,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v0.2.0"
-      resolved-ref: "3d50553948d989c960eee107112e3080bc7ba9f2"
+      ref: "v0.6.0"
+      resolved-ref: "72387b758a5f74f9f0aa3239c02140d6b5a33950"
       url: "https://github.com/alpinsuite/ui-kit.git"
     source: git
-    version: "0.2.0"
+    version: "0.6.0"
   source_map_stack_trace:
     dependency: transitive
     description:
