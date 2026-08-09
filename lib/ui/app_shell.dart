@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_selector/file_selector.dart';
-import 'package:flutter/widgets.dart';
+// Material rather than widgets: the shell provides the Material ancestor that
+// Slate's Slider-based controls need. Nothing else here is Material-styled —
+// the look comes entirely from the Slate theme.
+import 'package:flutter/material.dart';
 import 'package:kino_core/kino_core.dart';
 import 'package:kino_media/kino_media.dart';
 import 'package:provider/provider.dart';
@@ -104,7 +107,12 @@ class _AppShellState extends State<AppShell> {
         listenable: playback,
         builder: (context, _) {
           final state = playback.state;
-          return ColoredBox(
+          // Material, not a bare ColoredBox: some Slate controls are built on
+          // Material widgets — SlateSlider wraps a Slider — and those assert
+          // without a Material ancestor. Kino draws its own chrome, so this is
+          // a plain Material surface rather than a Scaffold, which would bring
+          // an app bar, a body and a floating action button nobody wants.
+          return Material(
             color: palette.background,
             child: Column(
               children: <Widget>[

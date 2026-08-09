@@ -70,7 +70,11 @@ class _KinoAppState extends State<KinoApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<ThemeController>.value(value: _theme),
-        Provider<PlaybackController>.value(value: _playback),
+        // ListenableProvider, not Provider: PlaybackController is a Listenable,
+        // and plain Provider asserts against that rather than silently handing
+        // out something nothing can rebuild on. The `.value` constructor is
+        // right because this State disposes the controller itself.
+        ListenableProvider<PlaybackController>.value(value: _playback),
       ],
       child: ListenableBuilder(
         listenable: _theme,
